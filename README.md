@@ -5,14 +5,17 @@ This repository contains downstream proteomics analysis performed at the Proteom
 The study focuses on the proteomic characterization of a defined five-strain human gut bacterial consortium, including *Bifidobacterium* and *Roseburia* species.  
 The consortium was cultivated on different carbohydrate sources—human milk oligosaccharides (HMOs), dietary fibers, or a combination of both—to investigate how substrate availability influences microbial protein expression and metabolic activity.
 
+- **Publication DOI:** `XXXX`
+- **PRIDE project ID:** `PXD074160`
+
 ### Repository Structure
 
 #### Analysis Scripts
 - **Downstream_Analysis.R**  
   Main analysis script. Executes the downstream proteomics workflow using the `DownstreameR` function defined in `Functions.R`.
 
-- **Supplementary_figure.R**  
-  Script used to generate the supplementary bacterial stoichiometry figure.
+- **Supplementary_figure_14.R**  
+  Script used to generate the supplementary bacterial stoichiometry figure for the publication.
 
 #### Data
 - **Data/dbCAN3/**  
@@ -44,10 +47,10 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
   Species stoichiometries used to generate the supplementary figure  
   (output of `Downstream_Analysis.R`, input to `Supplementary_figure.R`).
 
-- **Data/Supplementary_figure.pdf**  
+- **Data/Supplementary_figure_14.pdf**  
   Supplementary stoichiometry figure.
 
-- **Data/Supplementary_figure.svg**  
+- **Data/Supplementary_figure_14.svg**  
   Supplementary stoichiometry figure (vector format).
 
 
