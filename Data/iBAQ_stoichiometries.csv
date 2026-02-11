@@ -1,0 +1,46 @@
+Species,Sample,Count
+1,Bifidobacterium longum subsp. infantis,S1_Mix,49.23
+2,Bifidobacterium adolescentis,S1_Mix,10.85
+3,Roseburia hominis,S1_Mix,15.34
+4,Roseburia intestinalis,S1_Mix,24.18
+5,Roseburia inulinivorans,S1_Mix,0.4
+6,Bifidobacterium longum subsp. infantis,S2_Mix,48.2
+7,Bifidobacterium adolescentis,S2_Mix,11.07
+8,Roseburia hominis,S2_Mix,15.41
+9,Roseburia intestinalis,S2_Mix,24.81
+10,Roseburia inulinivorans,S2_Mix,0.51
+11,Bifidobacterium longum subsp. infantis,S3_Mix,47.66
+12,Bifidobacterium adolescentis,S3_Mix,10.88
+13,Roseburia hominis,S3_Mix,15.01
+14,Roseburia intestinalis,S3_Mix,25.79
+15,Roseburia inulinivorans,S3_Mix,0.67
+16,Bifidobacterium longum subsp. infantis,S4_HMOs,54.4
+17,Bifidobacterium adolescentis,S4_HMOs,12.29
+18,Roseburia hominis,S4_HMOs,12.51
+19,Roseburia intestinalis,S4_HMOs,20.34
+20,Roseburia inulinivorans,S4_HMOs,0.47
+21,Bifidobacterium longum subsp. infantis,S5_HMOs,54.15
+22,Bifidobacterium adolescentis,S5_HMOs,12.49
+23,Roseburia hominis,S5_HMOs,12.3
+24,Roseburia intestinalis,S5_HMOs,20.62
+25,Roseburia inulinivorans,S5_HMOs,0.45
+26,Bifidobacterium longum subsp. infantis,S6_HMOs,54.23
+27,Bifidobacterium adolescentis,S6_HMOs,12.46
+28,Roseburia hominis,S6_HMOs,12.72
+29,Roseburia intestinalis,S6_HMOs,20.05
+30,Roseburia inulinivorans,S6_HMOs,0.53
+31,Bifidobacterium longum subsp. infantis,S7_Fiber,1.18
+32,Bifidobacterium adolescentis,S7_Fiber,0.75
+33,Roseburia hominis,S7_Fiber,32.13
+34,Roseburia intestinalis,S7_Fiber,64.18
+35,Roseburia inulinivorans,S7_Fiber,1.76
+36,Bifidobacterium longum subsp. infantis,S8_Fiber,0.75
+37,Bifidobacterium adolescentis,S8_Fiber,0.84
+38,Roseburia hominis,S8_Fiber,33.26
+39,Roseburia intestinalis,S8_Fiber,63.53
+40,Roseburia inulinivorans,S8_Fiber,1.62
+41,Bifidobacterium longum subsp. infantis,S9_Fiber,1.32
+42,Bifidobacterium adolescentis,S9_Fiber,1.03
+43,Roseburia hominis,S9_Fiber,33.91
+44,Roseburia intestinalis,S9_Fiber,62.34
+45,Roseburia inulinivorans,S9_Fiber,1.4
