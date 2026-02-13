@@ -1,0 +1,6 @@
+species	color
+Roseburia intestinalis	#008000
+Roseburia hominis	#7D2DB9
+Bifidobacterium longum	#FCB14F
+Bifidobacterium adolescentis	#F14040
+Roseburia inulinivorans	#1A6FDF
