@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """
-Create a volcano plot from a pre-merged HMOs_vs_Fiber dbCAN file.
+Create a 3-panel volcano plot (A4) from pre-merged dbCAN files.
 Only GH/CE/PL families are shown (GT excluded).
+Title is shown inside each panel enwrapped in a box,
+and the x-axis label "log2(FC)" is only shown on the bottom panel.
 """
 
 from __future__ import annotations
@@ -15,7 +17,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from adjustText import adjust_text
-
 
 UNIPROT_RE = re.compile(r"\b(?:sp|tr)?\|?([A-NR-Z0-9]{5,10})\|?")
 
@@ -60,7 +61,6 @@ def find_accession_column(df: pd.DataFrame) -> str:
     for col in df.columns:
         if col in candidates:
             return col
-    # fallback: pick column with most extractable accessions
     best_col = df.columns[0]
     best_count = -1
     for col in df.columns:
@@ -82,7 +82,6 @@ def load_expression(path: Path) -> pd.DataFrame:
 
     df.columns = clean_names([str(c) for c in df.columns])
 
-    # canonicalize common column names
     alias_map = {
         "protein_accession": {"protein_accession", "accession", "acc", "protein_id", "id"},
         "logfc": {"logfc", "log2foldchange", "log2_fc", "log2fold_change", "fold_change"},
@@ -101,7 +100,6 @@ def load_expression(path: Path) -> pd.DataFrame:
     df["protein_accession"] = df["protein_accession_raw"].apply(extract_accession)
 
     if "logfc" not in df.columns:
-        # fallback: any column containing 'log' or 'fold'
         for col in df.columns:
             if re.search(r"log|fold", col):
                 df["logfc"] = pd.to_numeric(df[col], errors="coerce")
@@ -194,9 +192,7 @@ def load_species_colors(path: Path) -> tuple[dict[str, str], list[str]]:
 
 
 def darken_hex(color: str, factor: float = 0.75) -> str:
-    if not color:
-        return color
-    if not isinstance(color, str):
+    if not color or not isinstance(color, str):
         return color
     s = color.strip()
     if not s.startswith("#") or len(s) != 7:
@@ -216,22 +212,14 @@ def darken_hex(color: str, factor: float = 0.75) -> str:
 def format_species_label(species: str) -> str:
     if species == "Bifidobacterium longum":
         return r"$\it{Bifidobacterium\ longum}$ subsp. $\it{infantis}$"
-    return rf"$\it{{{species.replace(' ', '\\ ')}}}$"
+    return rf"$\it{{{species.replace(' ', r'\ ')}}}$"
 
 
-def volcano_plot(
-    df: pd.DataFrame,
-    outpath: Path,
-    lfc_cut: float,
-    fdr_cut: float,
-    label_n: int,
-    title: str,
-    xlabel: str,
-    species_colors_path: Path | None = None,
-) -> None:
+def prepare_volcano_df(df: pd.DataFrame, lfc_cut: float, fdr_cut: float) -> pd.DataFrame:
     df = df.copy()
     if "cazy" not in df.columns or any(col in df.columns for col in ("gh", "ce", "pl")):
         df["cazy"] = build_cazy_from_columns(df)
+
     cazy_str = df["cazy"].astype(str).str.strip()
     cazy_upper = cazy_str.str.upper()
     bad_cazy = {"", "NA", "N/A", "NONE", "NULL", "NAN", "-"}
@@ -239,38 +227,83 @@ def volcano_plot(
     df.loc[df["cazy"].astype(str).str.fullmatch(r"GH0", na=False), "cazy"] = np.nan
     df.loc[cazy_upper.str.startswith("CBM", na=False), "cazy"] = np.nan
     df.loc[cazy_upper.str.startswith("GT", na=False), "cazy"] = np.nan
+
     df["neglog10_fdr"] = -np.log10(df["fdr"].astype(float))
     df["significant"] = (df["fdr"] < fdr_cut) & (df["logfc"].abs() > lfc_cut)
     df["has_cazy"] = df["cazy"].notna() & (df["cazy"].astype(str) != "")
     df["strain_species"] = infer_species(df)
+    return df
 
-    plt.figure(figsize=(10, 8))
-    plt.scatter(
-        df["logfc"],
-        df["neglog10_fdr"],
-        s=15,
-        facecolors="none",
-        edgecolors="#9e9e9e",
-        alpha=0.5,
-        linewidths=0.6,
-    )
 
-    if species_colors_path is not None:
-        species_colors, species_order = load_species_colors(species_colors_path)
-    else:
-        species_counts = (
-            df.loc[df["has_cazy"] & df["strain_species"].notna(), "strain_species"]
-            .value_counts()
-            .head(5)
-        )
-        species_to_color = list(species_counts.index)
-        palette = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e"]
-        species_colors = dict(zip(species_to_color, palette[: len(species_to_color)]))
-        species_order = list(species_colors.keys())
-
+def build_legend_handles(
+    species_colors: dict[str, str],
+    species_order: list[str],
+    include_non_cazy: bool,
+) -> tuple[list[Line2D], list[str]]:
     legend_handles: list[Line2D] = []
     legend_labels: list[str] = []
-    colored_artists = []
+    species_markers = {
+        "Bifidobacterium longum": ">",
+        "Bifidobacterium adolescentis": "d",
+        "Roseburia inulinivorans": "p",
+        "Roseburia intestinalis": "p",
+        "Roseburia hominis": "p",
+    }
+    preferred_order = [
+        "Bifidobacterium longum",
+        "Bifidobacterium adolescentis",
+        "Roseburia inulinivorans",
+        "Roseburia intestinalis",
+        "Roseburia hominis",
+    ]
+    ordered_species = [s for s in preferred_order if s in species_colors]
+    ordered_species.extend([s for s in species_order if s not in ordered_species])
+
+    for species in ordered_species:
+        color = species_colors.get(species)
+        if not color:
+            continue
+        marker = species_markers.get(species, "o")
+        legend_handles.append(
+            Line2D([0], [0], marker=marker, color="none",
+                   markerfacecolor=color, markeredgecolor=color, markersize=6)
+        )
+        legend_labels.append(format_species_label(species))
+
+    if include_non_cazy:
+        legend_handles.append(
+            Line2D([0], [0], marker="o", color="none",
+                   markerfacecolor="none", markeredgecolor="#9e9e9e",
+                   markeredgewidth=1.5, markersize=6)
+        )
+        legend_labels.append("Non-CAZy")
+
+    return legend_handles, legend_labels
+
+
+
+def volcano_plot_ax(
+    ax: plt.Axes,
+    df: pd.DataFrame,
+    lfc_cut: float,
+    fdr_cut: float,
+    label_n: int,
+    xlabel: str,        
+    direction_text: str,  
+    species_colors: dict[str, str],
+    species_order: list[str],
+    use_species_colors: bool,
+    panel_label: str,
+    y_max: float,
+    box_x: float = 0.5, 
+    box_y: float = 0.035,
+) -> None:
+    ax.scatter(
+        df["logfc"], df["neglog10_fdr"],
+        s=15, facecolors="none", edgecolors="#9e9e9e",
+        alpha=0.5, linewidths=0.6,
+    )
+
     species_markers = {
         "Bifidobacterium longum": ">",
         "Bifidobacterium adolescentis": "d",
@@ -286,14 +319,8 @@ def volcano_plot(
             "Roseburia intestinalis",
             "Roseburia hominis",
         ]
-        ordered_species = [
-            species
-            for species in preferred_order
-            if species in species_colors
-        ]
-        ordered_species.extend(
-            [species for species in species_order if species not in ordered_species]
-        )
+        ordered_species = [s for s in preferred_order if s in species_colors]
+        ordered_species.extend([s for s in species_order if s not in ordered_species])
         for species in ordered_species:
             color = species_colors.get(species)
             if not color:
@@ -302,132 +329,87 @@ def volcano_plot(
             subset = df[df["has_cazy"] & (df["strain_species"] == species)]
             if subset.empty:
                 continue
-            colored_artists.append(
-                plt.scatter(
-                subset["logfc"],
-                subset["neglog10_fdr"],
-                s=30,
-                c=color,
-                alpha=0.9,
-                linewidths=0,
-                marker=marker,
-                )
+            ax.scatter(
+                subset["logfc"], subset["neglog10_fdr"],
+                s=30, c=color, alpha=0.9, linewidths=0, marker=marker,
             )
-            legend_handles.append(
-                Line2D(
-                    [0],
-                    [0],
-                    marker=marker,
-                    color="none",
-                    markerfacecolor=color,
-                    markeredgecolor=color,
-                    markersize=6,
-                )
-            )
-            legend_labels.append(format_species_label(species))
 
-        if species_colors_path is not None:
-            legend_handles.append(
-                Line2D(
-                    [0],
-                    [0],
-                    marker="o",
-                    color="none",
-                    markerfacecolor="none",
-                    markeredgecolor="#9e9e9e",
-                    markeredgewidth=1.5,
-                    markersize=6,
-                )
-            )
-            legend_labels.append("Non-CAZy")
-   
-    plt.axvline(-lfc_cut, color="#666666", linestyle="--", linewidth=1)
-    plt.axvline(lfc_cut, color="#666666", linestyle="--", linewidth=1)
-    plt.axhline(-np.log10(fdr_cut), color="#666666", linestyle="--", linewidth=1)
+    ax.axvline(-lfc_cut, color="#666666", linestyle="--", linewidth=1)
+    ax.axvline(lfc_cut, color="#666666", linestyle="--", linewidth=1)
+    ax.axhline(-np.log10(fdr_cut), color="#666666", linestyle="--", linewidth=1)
 
-    ax = plt.gca()
     ax.set_xlim(-10, 10)
+    ax.set_ylim(0, y_max*1.01)
+
     x_min, x_max = -10, 10
-    y_max = df["neglog10_fdr"].max()
     lfc_label = 0.585
-    x_offset = (x_max - x_min) * 0.012
+    x_offset = (x_max - x_min) * 0.006
+
+
     ax.text(
-        -lfc_cut - x_offset,
-        y_max * 0.95,
+        -lfc_cut - x_offset, y_max * 0.035,
         f"log$_2$(FC) = {-lfc_label:.3f}",
-        ha="right",
-        va="bottom",
-        fontsize=9,
-        fontweight="bold",
+        ha="right", va="bottom", fontsize=8, fontweight="bold",
     )
     ax.text(
-        lfc_cut + x_offset,
-        y_max * 0.95,
+        lfc_cut + x_offset, y_max * 0.035,
         f"log$_2$(FC) = {lfc_label:.3f}",
-        ha="left",
-        va="bottom",
-        fontsize=9,
-        fontweight="bold",
+        ha="left", va="bottom", fontsize=8, fontweight="bold",
     )
     ax.text(
-        x_min + (x_max - x_min) * 0.03,
-        -np.log10(fdr_cut),
+        x_min + (x_max - x_min) * 0.02, -np.log10(fdr_cut),
         f"FDR = {fdr_cut:.2f}",
-        ha="left",
-        va="bottom",
-        fontsize=9,
-        fontweight="bold",
+        ha="left", va="bottom", fontsize=8, fontweight="bold",
     )
 
-    # label top hits by score among non-GT CAZy
     df["score"] = df["logfc"].abs() * df["neglog10_fdr"]
     cazy_str = df["cazy"].astype(str)
     non_gt = ~cazy_str.str.startswith("GT", na=False)
     top = df[df["has_cazy"] & non_gt].sort_values("score", ascending=False).head(label_n)
 
     gh_mask = df["has_cazy"] & cazy_str.str.contains(
-        r"\bGH10\b|\bGH26\b|\bGH29\b|\bGH33\b|\bGH95\b|\bGH112\b|\bGH3\b|\bGH109\b|\bGH49\b",
-        regex=True,
-        na=False,
+        r"\bGH10\b|\bGH26\b|\bGH29\b|\bGH33\b|\bGH95\b|\bGH112\b|\bGH109\b|\bGH49\b|\bGH2\b",
+        regex=True, na=False,
     )
     gh_targets = df[gh_mask]
-    rose_inu_mask = (df["has_cazy"] & (df["strain_species"] == "Roseburia inulinivorans"))
-    rose_inu_targets = df[rose_inu_mask]
+    rose_inu_targets = df[df["has_cazy"] & (df["strain_species"] == "Roseburia inulinivorans")]
+
     label_df = pd.concat([top, gh_targets, rose_inu_targets], ignore_index=True).drop_duplicates()
+
     texts = []
     label_points = []
+    target_set = {"GH10", "GH26", "GH29", "GH33", "GH95", "GH112", "GH109", "GH49", "GH2"}
+
     for _, row in label_df.iterrows():
         tokens = str(row.get("cazy") or "").split("+")
-        targets = [t for t in tokens if t in {"GH10", "GH26", "GH29", "GH33", "GH95", "GH112", "GH3", "GH109", "GH49"}]
+        targets = [t for t in tokens if t in target_set]
         annotation_tokens = [t for t in tokens if t.startswith(("GH", "PL", "CE"))]
         label = "+".join(targets) if targets else (row.get("cazy") or row.get("protein_accession"))
         if pd.isna(label):
             continue
+
         x = row["logfc"]
         y = row["neglog10_fdr"]
+
         label_color = "#333333"
-        label_weight = "normal"
-        if annotation_tokens and species_colors_path is not None:
+        label_weight = "bold" if annotation_tokens else "normal"
+        if annotation_tokens and use_species_colors:
             species = row.get("strain_species")
             if isinstance(species, str) and species in species_colors:
                 label_color = darken_hex(species_colors[species], factor=0.65)
-        if annotation_tokens:
-            label_weight = "bold"
+
         texts.append(
-            plt.text(
-                x,
-                y,
-                str(label),
-                fontsize=7,
-                zorder=5,
-                color=label_color,
-                fontweight=label_weight,
+            ax.text(
+                x, y, str(label),
+                fontsize=7, zorder=5,
+                color=label_color, fontweight=label_weight,
                 bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="none", alpha=0.5),
             )
         )
         label_points.append((x, y))
+
     if texts:
-        adjust_text(texts)
+        adjust_text(texts, ax=ax)
         for text, (x, y) in zip(texts, label_points):
             ax.annotate(
                 "",
@@ -438,26 +420,27 @@ def volcano_plot(
                 zorder=4,
             )
 
-    plt.title(title, fontsize=18, fontweight="bold")
-    plt.xlabel(xlabel, fontsize=12, fontweight="bold")
-    plt.ylabel(
-        r"log$_{10}$(FDR)",
-        fontsize=12,
-        fontweight="bold",
+    ax.set_xlabel(xlabel, fontsize=10, fontweight="bold")
+    ax.set_ylabel(r"log$_{10}$(FDR)", fontsize=10, fontweight="bold")
+    ax.tick_params(axis="both", labelsize=9)
+
+ 
+    ax.text(
+        0.01, 0.98, panel_label,
+        transform=ax.transAxes,
+        ha="left", va="top",
+        fontsize=13, fontweight="bold",
+    )
+    ax.text( 
+        box_x, box_y,
+        direction_text,
+        transform=ax.transAxes,
+        ha="center", va="bottom",
+        fontsize=10, fontweight="bold",
+        bbox=dict(boxstyle="square,pad=0.25", facecolor="white", edgecolor="black",linewidth=0.8),
+        zorder=10,
     )
 
-    if legend_handles:
-        plt.legend(
-            legend_handles,
-            legend_labels,
-            frameon=False,
-            loc="upper center",
-            bbox_to_anchor=(0.5, -0.08),
-            ncol=2,
-        )
-    plt.tight_layout()
-    plt.savefig(outpath, dpi=1000)
-    plt.close()
 
 
 def parse_args() -> argparse.Namespace:
@@ -465,7 +448,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lfc", type=float, default=0.585, help="log2FC cutoff")
     p.add_argument("--fdr", type=float, default=0.05, help="FDR cutoff")
     p.add_argument("--label-n", type=int, default=50, help="Number of CAZy hits to label")
-    p.add_argument("--title", default="HMOs vs Fibre", help="Plot title")
     p.add_argument(
         "--species-colors",
         default=None,
@@ -478,44 +460,106 @@ def main() -> None:
     PLOTS = [
         {
             "expr": r"Data/dbCAN3/HMOs_vs_Fiber.merged_dbcan.csv",
-            "out": r"Data/dbCAN3/HMOs_vs_Fibre_supplementary_figure_xx.png",
-            "title": "HMOs vs Fibre",
-            "xlabel": r"Growth on Fibre  $\leftarrow$  log$_2$(FC)  $\rightarrow$  Growth on HMOs",
+            "direction": r"    Fibre  $\leftarrow$  Substrate  $\rightarrow$  HMOs     ",
+            "panel": "a",
+            "box_x":0.50, "box_y":0.93
         },
         {
             "expr": r"Data/dbCAN3/Mix_vs_Fiber.merged_dbcan.csv",
-            "out": r"Data/dbCAN3/Mix_vs_Fibre_supplementary_figure_xx.png",
-            "title": "HMO/Fibre vs Fibre",
-            "xlabel": r"Growth on Fibre  $\leftarrow$  log$_2$(FC)  $\rightarrow$  Growth on HMO/Fibre mix",
+            "direction": r"       Fibre  $\leftarrow$  Substrate  $\rightarrow$  HMO/Fibre ",
+            "panel": "b",
+            "box_x":0.50, "box_y":0.925
         },
         {
             "expr": r"Data/dbCAN3/Mix_vs_HMOs.merged_dbcan.csv",
-            "out": r"Data/dbCAN3/Mix_vs_HMOs_supplementary_figure_xx.png",
-            "title": "HMO/Fibre vs HMOs",
-            "xlabel": r"Growth on HMOs  $\leftarrow$  log$_2$(FC)  $\rightarrow$  Growth on HMO/Fibre mix",
+            "direction": r"      HMOs  $\leftarrow$  Substrate  $\rightarrow$  HMO/Fibre ",
+            "panel": "c",
+            "box_x":0.50, "box_y":0.905
         },
     ]
 
     args = parse_args()
 
-    # pick species colors file once
     if args.species_colors:
         species_colors_path = Path(args.species_colors)
     else:
         default_colors = Path(r"Data/dbCAN3/species.color_legend.txt")
         species_colors_path = default_colors if default_colors.exists() else None
 
-    # loop over all comparisons
+    prepared: list[tuple[dict, pd.DataFrame]] = []
+    y_max_raw: list[float] = []
     for cfg in PLOTS:
         expr = load_expression(Path(cfg["expr"]))
+        df_prepped = prepare_volcano_df(expr, args.lfc, args.fdr)
+        prepared.append((cfg, df_prepped))
 
-        volcano_plot(expr, Path(cfg["out"]), args.lfc, args.fdr, args.label_n, cfg["title"], cfg["xlabel"], species_colors_path)
+        m = df_prepped["neglog10_fdr"].max()
+        m = max(m, -np.log10(args.fdr))
+        y_max_raw.append(m if np.isfinite(m) else 1.0)
 
-        print(f"Rows: {len(expr)}")
-        cazy_series = expr["cazy"] if "cazy" in expr.columns else build_cazy_from_columns(expr)
-        print(f"CAZy-annotated rows: {pd.Series(cazy_series).notna().sum()}")
-        print(f"Wrote: {cfg['out']}\n")
+    if species_colors_path is None:
+        raise FileNotFoundError(
+            "No species color file found. Provide --species-colors or place species.color_legend.txt in the folder."
+        )
+    species_colors, species_order = load_species_colors(species_colors_path)
+    use_species_colors = True
+    include_non_cazy = True
 
+    legend_handles, legend_labels = build_legend_handles(species_colors, species_order, include_non_cazy)
+
+    height_ratios = [max(v, 0.1) for v in y_max_raw]
+    y_max_scaled = [v * 1.06 for v in y_max_raw]  
+
+    fig, axes = plt.subplots(
+        3, 1,
+        figsize=(8.27, 11.69),
+        sharex=True,
+        gridspec_kw={"height_ratios": [1.7, 1.6, 1.2]},
+    )
+
+    for i, (ax, (cfg, df_prepped)) in enumerate(zip(axes, prepared)):
+        xlabel = r"log$_2$(FC)" if i == len(prepared) - 1 else ""
+        volcano_plot_ax(
+            ax=ax,
+            df=df_prepped,
+            lfc_cut=args.lfc,
+            fdr_cut=args.fdr,
+            label_n=args.label_n,
+            xlabel=xlabel,
+            direction_text=cfg["direction"],
+            box_x=cfg.get("box_x", 0.5),
+            box_y=cfg.get("box_y", 0.95),
+            species_colors=species_colors,
+            species_order=species_order,
+            use_species_colors=use_species_colors,
+            panel_label=cfg["panel"],
+            y_max=y_max_scaled[i],
+        )
+        if i < 2:  
+            ax.tick_params(axis="x", labelbottom=False)
+
+        print(f"Rows: {len(df_prepped)}")
+        print(f"CAZy-annotated rows: {df_prepped['has_cazy'].sum()}")
+
+    if legend_handles:
+        fig.legend(
+            legend_handles,
+            legend_labels,
+            frameon=False,
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.01),
+            ncol=3,
+            columnspacing=1.4,
+            handletextpad=0.6,
+        )
+
+    fig.tight_layout(rect=[0, 0.045, 1, 1])
+    fig.subplots_adjust(hspace=0.04)
+
+    outpath = Path("Data/dbCAN3/Supplementary_figure_xx.png")
+    fig.savefig(outpath, dpi=1000)
+    plt.close(fig)
+    print(f"Wrote: {outpath}")
 
 
 if __name__ == "__main__":

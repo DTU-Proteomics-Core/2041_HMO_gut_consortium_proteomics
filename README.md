@@ -28,7 +28,7 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
   - FASTA files of regulated proteins used as input for dbCAN3 (output of `Downstream_Analysis.R`).
   - The output (`.txt` files) of dbCAN3 with the protein-wise CAZyme annotations (input to `merge_overview_report.py`).
   - The annotated DE analysis data table files, with suffices `.merged_dbcan.csv`. (output of `merge_overview_report.py`, input to `Supplementary_figure_xx.py`)
-  - The supplementary figure xx volcano plot files, with suffices `supplementary_figure_xx.png`. (output of `Supplementary_figure_xx.py`)
+  - The supplementary figure xx volcano plot file `supplementary_figure_xx.png`. (output of `Supplementary_figure_xx.py`)
 
 - **Data/FASTA/**  
   Proteome FASTA files for the five bacterial species in the consortium (input to `Downstream_Analysis.R`).
