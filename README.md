@@ -5,6 +5,7 @@ This repository contains downstream proteomics analysis performed at the Proteom
 The study focuses on the proteomic characterization of a defined five-strain human gut bacterial consortium, including *Bifidobacterium* and *Roseburia* species.  
 The consortium was cultivated on different carbohydrate sources—human milk oligosaccharides (HMOs), dietary fibers, or a combination of both—to investigate how substrate availability influences microbial protein expression and metabolic activity.
 
+- **Publication title:** `Dual human milk oligosaccharide-fibre utilisation is a selection cue for the weaning gut microbiome`
 - **Publication DOI:** `XXXX`
 - **PRIDE project ID:** `PXD074160`
 
@@ -20,15 +21,15 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
 - **merge_overview_report.py**
   Script used to combine the dbCAN3 output with the proteomics data output of DownstreameR.
   
-- **Supplementary_figure_xx.py**
+- **Supplementary_figure_15.py**
   Script used to generate the supplementary volcano plots for the publication.
 
 #### Data
 - **Data/dbCAN3/**  
   - FASTA files of regulated proteins used as input for dbCAN3 (output of `Downstream_Analysis.R`).
   - The output (`.txt` files) of dbCAN3 with the protein-wise CAZyme annotations (input to `merge_overview_report.py`).
-  - The annotated DE analysis data table files, with suffices `.merged_dbcan.csv`. (output of `merge_overview_report.py`, input to `Supplementary_figure_xx.py`)
-  - The supplementary figure xx volcano plot file `supplementary_figure_xx.png`. (output of `Supplementary_figure_xx.py`)
+  - The annotated DE analysis data table files, with suffices `.merged_dbcan.csv`. (output of `merge_overview_report.py`, input to `Supplementary_figure_15.py`)
+  - The supplementary figure 15 volcano plot file `supplementary_figure_15.png`. (output of `Supplementary_figure_15.py`)
 
 - **Data/FASTA/**  
   Proteome FASTA files for the five bacterial species in the consortium (input to `Downstream_Analysis.R`).
