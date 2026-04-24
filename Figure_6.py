@@ -556,7 +556,7 @@ def main() -> None:
     fig.tight_layout(rect=[0, 0.045, 1, 1])
     fig.subplots_adjust(hspace=0.04)
 
-    outpath = Path("Data/dbCAN3/Supplementary_figure_15.png")
+    outpath = Path("Data/dbCAN3/Figure_6.png")
     fig.savefig(outpath, dpi=1000)
     plt.close(fig)
     print(f"Wrote: {outpath}")

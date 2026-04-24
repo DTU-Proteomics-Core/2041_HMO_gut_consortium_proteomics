@@ -16,20 +16,20 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
   Main analysis script. Executes the downstream proteomics workflow using the `DownstreameR` function defined in `Functions.R`.
 
 - **Supplementary_figure_14.R**  
-  Script used to generate the supplementary bacterial stoichiometry figure for the publication.
+  Script used to generate the supplementary bacterial stoichiometry figure for the manuscript (Supplementary Figure 14).
   
 - **merge_overview_report.py**
   Script used to combine the dbCAN3 output with the proteomics data output of DownstreameR.
   
-- **Supplementary_figure_15.py**
-  Script used to generate the supplementary volcano plots for the publication.
+- **Figure_6.py**
+  Script used to generate the volcano plots for the manuscript (Figure 6).
 
 #### Data
 - **Data/dbCAN3/**  
   - FASTA files of regulated proteins used as input for dbCAN3 (output of `Downstream_Analysis.R`).
   - The output (`.txt` files) of dbCAN3 with the protein-wise CAZyme annotations (input to `merge_overview_report.py`).
-  - The annotated DE analysis data table files, with suffices `.merged_dbcan.csv`. (output of `merge_overview_report.py`, input to `Supplementary_figure_15.py`)
-  - The supplementary figure 15 volcano plot file `supplementary_figure_15.png`. (output of `Supplementary_figure_15.py`)
+  - The annotated DE analysis data table files, with suffices `.merged_dbcan.csv`. (output of `merge_overview_report.py`, input to `Figure_6.py`)
+  - The volcano plots file `Figure_6.png` as Figure 6 in the manuscript. (output of `Figure_6.py`)
 
 - **Data/FASTA/**  
   Proteome FASTA files for the five bacterial species in the consortium (input to `Downstream_Analysis.R`).
@@ -50,10 +50,10 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
   General dataset statistics and summary figures (output of `Downstream_Analysis.R`).
 
 - **Data/iBAQ_stoichiometries.csv**  
-  Species stoichiometries used to generate the supplementary figure (output of `Downstream_Analysis.R`, input to `Supplementary_figure.R`).
+  Species stoichiometries used to generate the supplementary figure (output of `Downstream_Analysis.R`, input to `Supplementary_figure_14.R`).
 
 - **Data/Supplementary_figure_14.pdf**  
-  Supplementary stoichiometry figure (output of `Supplementary_figure.R`),
+  Supplementary stoichiometry figure (output of `Supplementary_figure_14.R`),
 
 - **Data/Supplementary_figure_14.svg**  
   Supplementary stoichiometry figure (vector format).
