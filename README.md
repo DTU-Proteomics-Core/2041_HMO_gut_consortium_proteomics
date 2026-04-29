@@ -8,6 +8,7 @@ The consortium was cultivated on different carbohydrate sources—human milk oli
 - **Publication title:** `Dual human milk oligosaccharide-fibre utilisation is a selection cue for the weaning gut microbiome`
 - **Publication DOI:** `XXXX`
 - **PRIDE project ID:** `PXD074160`
+- **Zenodo DOI:** [![DOI](https://zenodo.org/badge/1155232352.svg)](https://doi.org/10.5281/zenodo.19882715)
 
 ### Repository Structure
 
