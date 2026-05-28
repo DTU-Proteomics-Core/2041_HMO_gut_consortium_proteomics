@@ -6,7 +6,7 @@ The study focuses on the proteomic characterization of a defined five-strain hum
 The consortium was cultivated on different carbohydrate sources—human milk oligosaccharides (HMOs), dietary fibers, or a combination of both—to investigate how substrate availability influences microbial protein expression and metabolic activity.
 
 - **Publication title:** `Dual human milk oligosaccharide-fibre utilisation is a selection cue for the weaning gut microbiome`
-- **Publication DOI:** [![DOI](https://zenodo.org/badge/1155232352.svg)](https://doi.org/10.1038/s41467-026-73297-5)
+- **Publication DOI:** [![DOI](https://zenodo.org/badge/DOI/10.1038/s41586-020-2649-2.svg)](https://doi.org/10.1038/s41467-026-73297-5)
 - **PRIDE project ID:** `PXD074160`
 - **Zenodo DOI:** [![DOI](https://zenodo.org/badge/1155232352.svg)](https://doi.org/10.5281/zenodo.19882715)
 
